@@ -1,5 +1,6 @@
 package com.example.httpstreams.controller;
 
+import com.example.httpstreams.StudentDTO;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -39,6 +40,33 @@ public class APIController {
     @GetMapping(value = "/data/flux", produces = MediaType.APPLICATION_STREAM_JSON_VALUE)
     public Flux<Object> streamDataFlux() {
         return Flux.interval(Duration.ofSeconds(1)).map(i -> "Data stream line - " + i );
+    }
+
+    @GetMapping("/json")
+    public ResponseEntity<StreamingResponseBody> streamJson() {
+        int maxRecords = 1000;
+        StreamingResponseBody responseBody = response -> {
+            for (int i = 1; i <= maxRecords; i++) {
+                StudentDTO st = new StudentDTO("Name-" + i, i);
+                ObjectMapper mapper = new ObjectMapper();
+                String jsonString = mapper.writeValueAsString(st) +"\n";
+                response.write(jsonString.getBytes());
+                response.flush();
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        };
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_STREAM_JSON)
+                .body(responseBody);
+    }
+
+    @GetMapping(value = "/json/flux", produces = MediaType.APPLICATION_STREAM_JSON_VALUE)
+    public Flux<StudentDTO> streamJsonObjects() {
+        return Flux.interval(Duration.ofSeconds(1)).map(i -> new StudentDTO("Name-" + i, i.intValue()));
     }
 
     @GetMapping("/textfile")
