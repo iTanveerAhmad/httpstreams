@@ -12,8 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 import reactor.core.publisher.Flux;
 
-import java.io.File;
-import java.io.FileNotFoundException;
+import java.io.*;
 import java.nio.file.Files;
 import java.time.Duration;
 
@@ -99,5 +98,20 @@ public class APIController {
                 .body(responseBody);
     }
 
-
+    @GetMapping(value = "/csv")
+    public ResponseEntity<StreamingResponseBody> getCsvFile() {
+        StreamingResponseBody stream = output -> {
+            Writer writer = new BufferedWriter(new OutputStreamWriter(output));
+            writer.write("name,rollNo"+"\n");
+            for (int i = 1; i <= 10000; i++) {
+                StudentDTO st = new StudentDTO("Name-" + i, i);
+                writer.write(st.getName() + "," + st.getRollNumber() + "\n");
+                writer.flush();
+            }
+        };
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=data.csv")
+                .contentType(MediaType.TEXT_PLAIN)
+                .body(stream);
+    }
 }
